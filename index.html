@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Will you be my Valentine?</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #ffe6ef;
+    }
+    h1 { margin-bottom: 40px; }
+    .buttons {
+      display: flex;
+      gap: 20px;
+      position: relative;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #no {
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <h1>Will you be my Valentine? 💘</h1>
+  <div class="buttons">
+    <button id="yes">Yes</button>
+    <button id="no">No</button>
+  </div>
+
+  <script>
+    const yesBtn = document.getElementById('yes');
+    const noBtn  = document.getElementById('no');
+
+    yesBtn.addEventListener('click', () => {
+      alert("Yay! ❤️");
+    });
+
+    function moveNoButton() {
+      const container = document.querySelector('.buttons');
+      const rect = container.getBoundingClientRect();
+
+      const maxX = rect.width - noBtn.offsetWidth;
+      const maxY = rect.height - noBtn.offsetHeight;
+
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      noBtn.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    // Move on hover or focus (keyboard)
+    noBtn.addEventListener('mouseenter', moveNoButton);
+    noBtn.addEventListener('focus', moveNoButton);
+  </script>
+</body>
+</html>
