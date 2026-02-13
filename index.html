@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Will you be my Valentine?</title>
+
   <style>
     :root{
       --bg1:#ffe6ef;
@@ -13,18 +14,16 @@
       --pink2:#ff86c6;
       --shadow: 0 18px 45px rgba(255, 79, 163, .18);
     }
-        /* Custom cursor everywhere */
-    html, body {
-      cursor: url("cursor.png") 16 16, auto;
-    }
-    
-    /* Keep the “button” feel while still using your image */
-    button, a {
-      cursor: url("cursor.png") 16 16, pointer;
-    }
-
 
     *{ box-sizing:border-box; }
+
+    /* Custom cursor everywhere (ensure cursor.png is next to index.html) */
+    html, body{
+      cursor: url("cursor.png") 16 16, auto;
+    }
+    button, a{
+      cursor: url("cursor.png") 16 16, pointer;
+    }
 
     body{
       margin:0;
@@ -38,6 +37,7 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
     }
 
+    /* Floating background hearts (subtle) */
     .bg-heart{
       position: fixed;
       inset: 0;
@@ -86,7 +86,7 @@
       opacity: .92;
     }
 
-    /* Card */
+    /* Center card */
     .card{
       position: relative;
       z-index: 10;
@@ -123,7 +123,10 @@
       padding: 12px 18px;
       font-size: 18px;
       border-radius: 14px;
-      cursor:pointer;
+
+      /* IMPORTANT: keep custom cursor on buttons (otherwise later cursor:pointer would override it) */
+      cursor: url("cursor.png") 16 16, pointer;
+
       box-shadow: 0 10px 25px rgba(0,0,0,.10);
       transition: transform .08s ease, filter .2s ease, left 140ms ease, top 140ms ease;
       min-width: 120px;
@@ -140,15 +143,15 @@
       background:#fff;
       color:#444;
       border: 1px solid rgba(0,0,0,.08);
-      position: static; /* starts inside the row next to Yes */
+      position: static; /* starts in-row next to Yes */
       z-index: 12;
     }
 
-    /* Placeholder keeps the Yes button from re-centering when No detaches */
+    /* Placeholder keeps the row centered when No detaches */
     #no-placeholder{
       display:none;
-      width: 120px; /* will be set precisely by JS */
-      height: 44px; /* will be set precisely by JS */
+      width: 120px;
+      height: 44px;
     }
 
     /* Cursor heart trail */
@@ -180,6 +183,7 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
+  <!-- Your repo images -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -190,10 +194,7 @@
 
     <div class="buttons" id="buttonRow">
       <button id="yes">Yes</button>
-
-      <!-- This placeholder appears only after No starts fleeing, so Yes doesn't jump position -->
       <span id="no-placeholder" aria-hidden="true"></span>
-
       <button id="no" aria-label="No">No</button>
     </div>
   </main>
@@ -208,7 +209,7 @@
     yesBtn.addEventListener('click', () => alert("Yay!! ❤️🌸"));
     noBtn.addEventListener('click', () => alert("Nice try 😅"));
 
-    // --- No button behavior ---
+    // --- No button: starts next to Yes, then detaches and flees ---
     let lastMove = 0;
     let dodges = 0;
     let detached = false;
@@ -226,13 +227,14 @@
       if (detached) return;
       detached = true;
 
-      // Keep the layout stable
-      const r = noBtn.getBoundingClientRect(); // viewport-relative box [web:63]
+      const r = noBtn.getBoundingClientRect();
+
+      // Keep layout stable
       ph.style.display = 'inline-block';
       ph.style.width  = `${r.width}px`;
       ph.style.height = `${r.height}px`;
 
-      // Move the real No button to body and keep it at the same on-screen spot
+      // Move to body and keep same on-screen position
       document.body.appendChild(noBtn);
       noBtn.style.position = 'fixed';
       noBtn.style.left = `${r.left}px`;
@@ -244,7 +246,6 @@
       const vh = window.innerHeight;
 
       const forbidden = card.getBoundingClientRect();
-
       const btnW = noBtn.offsetWidth;
       const btnH = noBtn.offsetHeight;
 
@@ -259,10 +260,8 @@
 
         const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
 
-        // Don’t cover the question card
         if(rectsOverlap(candidate, forbidden)) continue;
 
-        // Don’t spawn under the cursor
         if(avoidPoint){
           const cx = x + btnW/2;
           const cy = y + btnH/2;
@@ -280,7 +279,6 @@
       return false;
     }
 
-    // Flee when pointer approaches the No button (works even after it detaches)
     window.addEventListener('pointermove', (e) => {
       const now = performance.now();
       if(now - lastMove < COOLDOWN_MS) return;
@@ -301,8 +299,7 @@
     }, { passive:true });
 
     window.addEventListener('resize', () => {
-      // On resize: reset to initial cute layout (next to Yes)
-      // (Also removes placeholder and reattaches the button into the row.)
+      // Reset to initial layout on resize
       if (detached){
         row.appendChild(noBtn);
         noBtn.style.position = 'static';
@@ -342,3 +339,4 @@
   </script>
 </body>
 </html>
+
