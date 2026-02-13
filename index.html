@@ -47,24 +47,16 @@
       border-radius: 3px;
       animation: floaty 7s linear infinite;
     }
-    .bg-heart::before{
-      left: 10%;
-      top: 75%;
-      animation-duration: 8.5s;
-    }
-    .bg-heart::after{
-      left: 82%;
-      top: 80%;
-      animation-duration: 10.5s;
-      background: rgba(255, 134, 198, .20);
-    }
+    .bg-heart::before{ left: 10%; top: 75%; animation-duration: 8.5s; }
+    .bg-heart::after{ left: 82%; top: 80%; animation-duration: 10.5s; background: rgba(255, 134, 198, .20); }
+
     @keyframes floaty{
       0%{ transform: translateY(0) rotate(45deg); opacity:.15; }
       60%{ opacity:.30; }
       100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
     }
 
-    /* Flowers pinned to the viewport */
+    /* Flowers pinned to viewport */
     .flower{
       position: fixed;
       pointer-events: none;
@@ -73,26 +65,18 @@
       filter: drop-shadow(0 14px 26px rgba(0,0,0,.10));
       height: auto;
     }
-    .flower.topleft{
-      top: -10px;
-      left: -10px;
-      width: min(260px, 36vw);
-    }
-    .flower.topright{
-      top: -10px;
-      right: -10px;
-      width: min(260px, 36vw);
-    }
+    .flower.topleft{ top:-10px; left:-10px; width:min(260px, 36vw); }
+    .flower.topright{ top:-10px; right:-10px; width:min(260px, 36vw); }
     .flower.bottom{
-      bottom: -12px;
-      left: 50%;
+      bottom:-12px;
+      left:50%;
       transform: translateX(-50%);
-      width: min(520px, 86vw);
+      width:min(520px, 86vw);
       z-index: 1;
       opacity: .92;
     }
 
-    /* Center card */
+    /* Card */
     .card{
       position: relative;
       z-index: 10;
@@ -103,7 +87,7 @@
       box-shadow: var(--shadow);
       border: 1px solid rgba(255, 79, 163, .18);
       backdrop-filter: blur(6px);
-      text-align: center;
+      text-align:center;
       margin: 0 auto;
       top: 50vh;
       transform: translateY(-55%);
@@ -112,17 +96,14 @@
     h1{
       margin: 0 0 10px;
       font-size: clamp(24px, 4vw, 34px);
-      letter-spacing: .2px;
+      letter-spacing:.2px;
     }
-
-    p{
-      margin: 0 0 18px;
-      opacity: .75;
-    }
+    p{ margin: 0 0 18px; opacity:.75; }
 
     .buttons{
       display:flex;
       justify-content:center;
+      align-items:center;
       gap:14px;
       margin-top: 14px;
     }
@@ -134,28 +115,30 @@
       border-radius: 14px;
       cursor:pointer;
       box-shadow: 0 10px 25px rgba(0,0,0,.10);
-      transition: transform .08s ease, filter .2s ease;
+      transition: transform .08s ease, filter .2s ease, left 140ms ease, top 140ms ease;
+      min-width: 120px;
     }
     button:active{ transform: translateY(1px) scale(.99); }
     button:focus-visible{ outline: 3px solid rgba(255,79,163,.35); outline-offset: 3px; }
 
     #yes{
       background: linear-gradient(135deg, #ff3f9a, #ff77c4);
-      color: #fff;
-      min-width: 120px;
+      color:#fff;
     }
 
-    /* No button: fixed and moves around */
     #no{
-      position: fixed;
-      left: 70vw;
-      top: 62vh;
-      background: #fff;
-      color: #444;
+      background:#fff;
+      color:#444;
       border: 1px solid rgba(0,0,0,.08);
-      min-width: 120px;
+      position: static; /* starts inside the row next to Yes */
       z-index: 12;
-      transition: left 140ms ease, top 140ms ease;
+    }
+
+    /* Placeholder keeps the Yes button from re-centering when No detaches */
+    #no-placeholder{
+      display:none;
+      width: 120px; /* will be set precisely by JS */
+      height: 44px; /* will be set precisely by JS */
     }
 
     /* Cursor heart trail */
@@ -177,7 +160,7 @@
     }
 
     @media (max-width: 420px){
-      #no, #yes{ min-width: 110px; font-size: 17px; }
+      button{ min-width: 110px; font-size: 17px; }
       .card{ padding: 22px 16px; }
       .flower.bottom{ width: min(520px, 96vw); }
     }
@@ -187,7 +170,6 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
-  <!-- Filenames match your repo -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -196,28 +178,32 @@
     <h1>Will you be my Valentine? 💘</h1>
     <p>(Be honest… if you can catch the “No”.)</p>
 
-    <div class="buttons">
+    <div class="buttons" id="buttonRow">
       <button id="yes">Yes</button>
+
+      <!-- This placeholder appears only after No starts fleeing, so Yes doesn't jump position -->
+      <span id="no-placeholder" aria-hidden="true"></span>
+
+      <button id="no" aria-label="No">No</button>
     </div>
   </main>
-
-  <button id="no" aria-label="No">No</button>
 
   <script>
     const yesBtn = document.getElementById('yes');
     const noBtn  = document.getElementById('no');
     const card   = document.getElementById('card');
+    const row    = document.getElementById('buttonRow');
+    const ph     = document.getElementById('no-placeholder');
 
     yesBtn.addEventListener('click', () => alert("Yay!! ❤️🌸"));
     noBtn.addEventListener('click', () => alert("Nice try 😅"));
 
-    // --- No button chase logic ---
+    // --- No button behavior ---
     let lastMove = 0;
     let dodges = 0;
-    let hasFledOnce = false;
+    let detached = false;
 
-    const FLEE_RADIUS_FIRST = 110; // first approach (when it's next to Yes)
-    const FLEE_RADIUS = 130;       // afterwards
+    const FLEE_RADIUS = 130;
     const COOLDOWN_MS = 120;
     const EDGE_PAD = 12;
     const MAX_TRIES = 40;
@@ -226,34 +212,21 @@
       return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
     }
 
-    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+    function detachNoButton(){
+      if (detached) return;
+      detached = true;
 
-    function spawnNoNextToYes(){
-      // Put No right next to Yes (to the right), but still not inside the card text weirdly.
-      const yesRect  = yesBtn.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
+      // Keep the layout stable
+      const r = noBtn.getBoundingClientRect(); // viewport-relative box [web:63]
+      ph.style.display = 'inline-block';
+      ph.style.width  = `${r.width}px`;
+      ph.style.height = `${r.height}px`;
 
-      const btnW = noBtn.offsetWidth;
-      const btnH = noBtn.offsetHeight;
-
-      const gap = 14; // similar to the .buttons gap
-      let x = yesRect.right + gap;
-      let y = yesRect.top + (yesRect.height - btnH) / 2;
-
-      // Keep it inside the viewport
-      x = clamp(x, EDGE_PAD, window.innerWidth - btnW - EDGE_PAD);
-      y = clamp(y, EDGE_PAD, window.innerHeight - btnH - EDGE_PAD);
-
-      // If that would overlap the card area too awkwardly (rare), place it slightly lower.
-      const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
-      const forbidden = cardRect;
-
-      if (rectsOverlap(candidate, forbidden) && (x > cardRect.left && x < cardRect.right)) {
-        y = clamp(cardRect.bottom + 10, EDGE_PAD, window.innerHeight - btnH - EDGE_PAD);
-      }
-
-      noBtn.style.left = `${x}px`;
-      noBtn.style.top  = `${y}px`;
+      // Move the real No button to body and keep it at the same on-screen spot
+      document.body.appendChild(noBtn);
+      noBtn.style.position = 'fixed';
+      noBtn.style.left = `${r.left}px`;
+      noBtn.style.top  = `${r.top}px`;
     }
 
     function placeNoButtonRandom(avoidPoint){
@@ -275,8 +248,11 @@
         const y = minY + Math.random() * (maxY - minY);
 
         const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
+
+        // Don’t cover the question card
         if(rectsOverlap(candidate, forbidden)) continue;
 
+        // Don’t spawn under the cursor
         if(avoidPoint){
           const cx = x + btnW/2;
           const cy = y + btnH/2;
@@ -294,12 +270,7 @@
       return false;
     }
 
-    // Initial spawn next to Yes
-    window.addEventListener('load', () => {
-      spawnNoNextToYes();
-      hasFledOnce = false;
-    });
-
+    // Flee when pointer approaches the No button (works even after it detaches)
     window.addEventListener('pointermove', (e) => {
       const now = performance.now();
       if(now - lastMove < COOLDOWN_MS) return;
@@ -310,19 +281,27 @@
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
 
       const dynamicRadius = Math.max(70, FLEE_RADIUS - dodges * 6);
-      const radius = hasFledOnce ? dynamicRadius : FLEE_RADIUS_FIRST;
 
-      if(dist < radius){
+      if(dist < dynamicRadius){
+        detachNoButton();
         dodges++;
         lastMove = now;
-        hasFledOnce = true;
         placeNoButtonRandom({x:e.clientX, y:e.clientY});
       }
     }, { passive:true });
 
     window.addEventListener('resize', () => {
-      spawnNoNextToYes();
-      hasFledOnce = false;
+      // On resize: reset to initial cute layout (next to Yes)
+      // (Also removes placeholder and reattaches the button into the row.)
+      if (detached){
+        row.appendChild(noBtn);
+        noBtn.style.position = 'static';
+        noBtn.style.left = '';
+        noBtn.style.top  = '';
+        ph.style.display = 'none';
+        detached = false;
+        dodges = 0;
+      }
     });
 
     // --- Heart cursor trail ---
