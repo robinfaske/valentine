@@ -2,88 +2,320 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Will you be my Valentine?</title>
   <style>
-    body{
-      font-family:sans-serif;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      background:#ffe6ef;
+    :root{
+      --bg1:#ffe6ef;
+      --bg2:#fff6fb;
+      --card:#ffffffcc;
+      --pink:#ff4fa3;
+      --pink2:#ff86c6;
+      --shadow: 0 18px 45px rgba(255, 79, 163, .18);
     }
-    h1{ margin-bottom:40px; }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden;
+      user-select:none;
+      background:
+        radial-gradient(900px 500px at 20% 20%, #fff 0%, transparent 55%),
+        radial-gradient(700px 450px at 80% 30%, #fff 0%, transparent 55%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    /* Center card */
+    .card{
+      position:relative;
+      z-index:10;
+      width:min(560px, calc(100vw - 32px));
+      padding:28px 22px;
+      border-radius:22px;
+      background:var(--card);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 79, 163, .18);
+      backdrop-filter: blur(6px);
+      text-align:center;
+      margin: 0 auto;
+      top: 50vh;
+      transform: translateY(-55%);
+    }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing:.2px;
+    }
+
+    p{
+      margin: 0 0 18px;
+      opacity:.75;
+    }
 
     .buttons{
-      position:relative;
-      width: 320px;          /* give the playground a real size */
-      height: 90px;
       display:flex;
-      align-items:center;
       justify-content:center;
-      gap:20px;
+      gap:14px;
+      margin-top: 14px;
     }
 
     button{
-      padding:10px 20px;
-      font-size:18px;
+      border:0;
+      padding: 12px 18px;
+      font-size: 18px;
+      border-radius: 14px;
       cursor:pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,.10);
+      transition: transform .08s ease, filter .2s ease;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+    button:focus-visible{ outline: 3px solid rgba(255,79,163,.35); outline-offset: 3px; }
+
+    #yes{
+      background: linear-gradient(135deg, #ff3f9a, #ff77c4);
+      color: white;
+      min-width: 120px;
     }
 
+    /* No button floats freely across the viewport */
     #no{
+      position: fixed;
+      left: 70vw;
+      top: 62vh;
+      background: white;
+      color: #444;
+      border: 1px solid rgba(0,0,0,.08);
+      min-width: 120px;
+      z-index: 12;
+      transition: left 140ms ease, top 140ms ease;
+    }
+
+    /* Cute “sparkle” hearts in the background */
+    .bg-heart{
+      position: fixed;
+      inset: 0;
+      pointer-events:none;
+      z-index: 0;
+      opacity: .35;
+      filter: blur(.2px);
+    }
+    .bg-heart::before,
+    .bg-heart::after{
+      content:"";
       position:absolute;
-      left: 180px;           /* starting position */
-      top: 25px;
-      transition: left 120ms linear, top 120ms linear; /* smooth move */
+      width: 14px;
+      height: 14px;
+      background: rgba(255, 79, 163, .22);
+      transform: rotate(45deg);
+      border-radius: 3px;
+      animation: floaty 7s linear infinite;
+    }
+    .bg-heart::before{
+      left: 10%;
+      top: 75%;
+      animation-duration: 8.5s;
+    }
+    .bg-heart::after{
+      left: 82%;
+      top: 80%;
+      animation-duration: 10.5s;
+      background: rgba(255, 134, 198, .20);
+    }
+    @keyframes floaty{
+      0%{ transform: translateY(0) rotate(45deg); opacity:.15; }
+      60%{ opacity:.30; }
+      100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
+    }
+
+    /* Cursor heart trail */
+    .heart{
+      position: fixed;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -50%);
+      pointer-events:none;
+      z-index: 9999;
+      color: var(--pink);
+      text-shadow: 0 6px 18px rgba(255, 79, 163, .28);
+      will-change: transform, opacity;
+      animation: heart-float 900ms ease-out forwards;
+    }
+    @keyframes heart-float{
+      0%   { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translate(-50%, -50%) translateY(-42px) scale(.7) rotate(12deg); }
+    }
+
+    /* Corner flower decorations */
+    .corner-flower{
+      position: fixed;
+      width: min(260px, 34vw);
+      height: auto;
+      pointer-events: none;
+      z-index: 2;
+      opacity: .95;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.10));
+    }
+    .tl{ left:-10px; top:-10px; }
+    .tr{ right:-10px; top:-10px; transform: scaleX(-1); }
+    .bl{ left:-10px; bottom:-10px; transform: scaleY(-1); }
+    .br{ right:-10px; bottom:-10px; transform: scale(-1, -1); }
+
+    /* Small screen tweaks */
+    @media (max-width: 420px){
+      #no, #yes{ min-width: 110px; font-size: 17px; }
+      .card{ padding: 22px 16px; }
     }
   </style>
 </head>
 <body>
-  <h1>Will you be my Valentine? 💘</h1>
-  <div class="buttons" id="arena">
-    <button id="yes">Yes</button>
-    <button id="no">No</button>
-  </div>
+  <div class="bg-heart" aria-hidden="true"></div>
+
+  <!-- Put your real flower PNGs here (download + rename as shown below) -->
+  <img class="corner-flower tl" src="flower-top-left.png"  alt="" aria-hidden="true">
+  <img class="corner-flower tr" src="flower-top-left.png"  alt="" aria-hidden="true">
+  <img class="corner-flower bl" src="flower-top-left.png"  alt="" aria-hidden="true">
+  <img class="corner-flower br" src="flower-top-left.png"  alt="" aria-hidden="true">
+
+  <main class="card" id="card">
+    <h1>Will you be my Valentine? 💘</h1>
+    <p>(Be honest… if you can catch the “No”.)</p>
+
+    <div class="buttons">
+      <button id="yes">Yes</button>
+    </div>
+  </main>
+
+  <button id="no" aria-label="No">No</button>
 
   <script>
     const yesBtn = document.getElementById('yes');
     const noBtn  = document.getElementById('no');
-    const arena  = document.getElementById('arena');
+    const card   = document.getElementById('card');
 
-    yesBtn.addEventListener('click', () => alert("Yay! ❤️"));
-
-    function moveNoButton() {
-      const arenaRect = arena.getBoundingClientRect();
-
-      // Use offset sizes (not transforms) so bounds stay correct.
-      const maxX = arenaRect.width  - noBtn.offsetWidth;
-      const maxY = arenaRect.height - noBtn.offsetHeight;
-
-      const x = Math.random() * maxX;
-      const y = Math.random() * maxY;
-
-      // Move via left/top (simpler than translate for this case).
-      noBtn.style.left = `${x}px`;
-      noBtn.style.top  = `${y}px`;
-    }
-
-    // Only move when the pointer comes near the No button (but not instantly on hover)
-    arena.addEventListener('pointermove', (e) => {
-      const r = noBtn.getBoundingClientRect();
-      const cx = e.clientX;
-      const cy = e.clientY;
-
-      // Distance from pointer to the button's rectangle (0 if inside)
-      const dx = Math.max(r.left - cx, 0, cx - r.right);
-      const dy = Math.max(r.top - cy, 0, cy - r.bottom);
-      const dist = Math.hypot(dx, dy);
-
-      if (dist < 25) moveNoButton();   // tweak 25px to taste
+    // --- cute interactions ---
+    yesBtn.addEventListener('click', () => {
+      alert("Yay!! ❤️🌸");
     });
 
-    // Optional: still allow clicking No (do nothing or show message)
-    noBtn.addEventListener('click', () => alert("Aww 😅"));
+    // Optional: if they DO catch No (rare), be playful
+    noBtn.addEventListener('click', () => {
+      alert("Nice try 😅 (Okay okay… you still get flowers.)");
+    });
+
+    // --- No button: chase across the whole screen, but never overlap the card/Yes area ---
+    let lastMove = 0;
+    let dodges = 0;
+
+    const FLEE_RADIUS = 130;   // how close the pointer must get before it dodges
+    const COOLDOWN_MS = 120;   // prevents jitter
+    const EDGE_PAD = 12;       // keep inside viewport edges
+    const MAX_TRIES = 40;      // tries to find a valid spot
+
+    function rectsOverlap(a, b){
+      return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+    }
+
+    function placeNoButtonRandom(avoidPoint){
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Forbidden zone: the whole card (contains Yes + text)
+      const forbidden = card.getBoundingClientRect();
+
+      const btnW = noBtn.offsetWidth;
+      const btnH = noBtn.offsetHeight;
+
+      const minX = EDGE_PAD;
+      const maxX = vw - btnW - EDGE_PAD;
+      const minY = EDGE_PAD;
+      const maxY = vh - btnH - EDGE_PAD;
+
+      for(let i=0;i<MAX_TRIES;i++){
+        const x = minX + Math.random() * (maxX - minX);
+        const y = minY + Math.random() * (maxY - minY);
+
+        const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
+
+        // Keep it away from the card
+        if(rectsOverlap(candidate, forbidden)) continue;
+
+        // Also keep it away from the pointer a bit (so it doesn't spawn under you)
+        if(avoidPoint){
+          const cx = x + btnW/2;
+          const cy = y + btnH/2;
+          const d = Math.hypot(cx - avoidPoint.x, cy - avoidPoint.y);
+          if(d < 180) continue;
+        }
+
+        noBtn.style.left = `${x}px`;
+        noBtn.style.top  = `${y}px`;
+        return true;
+      }
+
+      // Fallback (if something weird happens)
+      noBtn.style.left = `${Math.max(minX, maxX*0.7)}px`;
+      noBtn.style.top  = `${Math.max(minY, maxY*0.65)}px`;
+      return false;
+    }
+
+    // Put "No" somewhere safe at start (so it doesn't cover "Yes")
+    window.addEventListener('load', () => placeNoButtonRandom({x: window.innerWidth/2, y: window.innerHeight/2}));
+
+    // Dodge when you get close (chase effect)
+    window.addEventListener('pointermove', (e) => {
+      const now = performance.now();
+      if(now - lastMove < COOLDOWN_MS) return;
+
+      const r = noBtn.getBoundingClientRect();
+      const cx = r.left + r.width/2;
+      const cy = r.top  + r.height/2;
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+
+      // Make it slightly easier to catch after many dodges (optional cute balancing)
+      const dynamicRadius = Math.max(70, FLEE_RADIUS - dodges * 6);
+
+      if(dist < dynamicRadius){
+        dodges++;
+        lastMove = now;
+        placeNoButtonRandom({x:e.clientX, y:e.clientY});
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      // Keep it inside viewport after resize
+      placeNoButtonRandom({x: window.innerWidth/2, y: window.innerHeight/2});
+    });
+
+    // --- Pink heart cursor trail ---
+    // A common approach is: create small heart elements on mouse/pointer move,
+    // animate them with CSS, then remove them after animation. [web:16]
+    let lastHeart = 0;
+    const HEART_RATE_MS = 14; // lower = more hearts
+
+    window.addEventListener('pointermove', (e) => {
+      const now = performance.now();
+      if(now - lastHeart < HEART_RATE_MS) return;
+      lastHeart = now;
+
+      const h = document.createElement('span');
+      h.className = 'heart';
+      h.textContent = '❤';
+
+      const size = 10 + Math.random() * 14;
+      const rot  = (Math.random() * 50 - 25);
+
+      h.style.left = `${e.clientX}px`;
+      h.style.top  = `${e.clientY}px`;
+      h.style.fontSize = `${size}px`;
+      h.style.color = Math.random() < 0.5 ? '#ff4fa3' : '#ff86c6';
+      h.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
+
+      document.body.appendChild(h);
+      h.addEventListener('animationend', () => h.remove());
+    }, { passive:true });
   </script>
 </body>
 </html>
