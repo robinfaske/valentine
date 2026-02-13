@@ -17,12 +17,19 @@
 
     *{ box-sizing:border-box; }
 
-    /* Custom cursor everywhere (ensure cursor.png is next to index.html) */
+    /*
+      Custom cursor:
+      - Use multiple URLs (browser uses the first it can load), then keyword fallback. [web:76]
+      - If your cursor image is too large, browsers may ignore it; 32x32 is a safe target. [web:76]
+      Files expected next to index.html:
+        cursor.cur  (optional but best)
+        cursor.png  (recommended 32x32, transparent)
+    */
     html, body{
-      cursor: url("cursor.png") 16 16, auto;
+      cursor: url("cursor.cur"), url("cursor.png") 16 16, auto;
     }
     button, a{
-      cursor: url("cursor.png") 16 16, pointer;
+      cursor: url("cursor.cur"), url("cursor.png") 16 16, pointer;
     }
 
     body{
@@ -66,7 +73,7 @@
       100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
     }
 
-    /* Flowers pinned to viewport */
+    /* Flowers pinned to viewport (your repo images) */
     .flower{
       position: fixed;
       pointer-events: none;
@@ -123,13 +130,12 @@
       padding: 12px 18px;
       font-size: 18px;
       border-radius: 14px;
-
-      /* IMPORTANT: keep custom cursor on buttons (otherwise later cursor:pointer would override it) */
-      cursor: url("cursor.png") 16 16, pointer;
-
       box-shadow: 0 10px 25px rgba(0,0,0,.10);
       transition: transform .08s ease, filter .2s ease, left 140ms ease, top 140ms ease;
       min-width: 120px;
+      /* Do NOT set cursor:pointer here; it's handled above so the custom cursor remains. */
+      background: #fff;
+      color: #444;
     }
     button:active{ transform: translateY(1px) scale(.99); }
     button:focus-visible{ outline: 3px solid rgba(255,79,163,.35); outline-offset: 3px; }
@@ -140,8 +146,6 @@
     }
 
     #no{
-      background:#fff;
-      color:#444;
       border: 1px solid rgba(0,0,0,.08);
       position: static; /* starts in-row next to Yes */
       z-index: 12;
@@ -183,7 +187,6 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
-  <!-- Your repo images -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -206,10 +209,68 @@
     const row    = document.getElementById('buttonRow');
     const ph     = document.getElementById('no-placeholder');
 
-    yesBtn.addEventListener('click', () => alert("Yay!! ❤️🌸"));
-    noBtn.addEventListener('click', () => alert("Nice try 😅"));
+    // ---- iCal (.ics) download on Yes ----
+    // Uses cursor hotspot coords & fallback logic in CSS; the calendar part is just a file download.
+    function toICSDateTimeUTC(d){
+      const pad = (n) => String(n).padStart(2, '0');
+      return (
+        d.getUTCFullYear() +
+        pad(d.getUTCMonth() + 1) +
+        pad(d.getUTCDate()) + 'T' +
+        pad(d.getUTCHours()) +
+        pad(d.getUTCMinutes()) +
+        pad(d.getUTCSeconds()) + 'Z'
+      );
+    }
 
-    // --- No button: starts next to Yes, then detaches and flees ---
+    function downloadICS({ title, description, location, start, end }){
+      const uid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())) + "@valentine";
+      const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Valentine Page//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${toICSDateTimeUTC(new Date())}
+DTSTART:${toICSDateTimeUTC(start)}
+DTEND:${toICSDateTimeUTC(end)}
+SUMMARY:${title}
+DESCRIPTION:${description}
+LOCATION:${location}
+END:VEVENT
+END:VCALENDAR`;
+
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "valentine-invite.ics";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    }
+
+    yesBtn.addEventListener('click', () => {
+      const start = new Date();
+      start.setMinutes(start.getMinutes() + 5); // starts in 5 minutes
+      const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour date
+
+      downloadICS({
+        title: "Valentine Date 💘",
+        description: "You clicked Yes 🙂",
+        location: "TBD",
+        start,
+        end
+      });
+
+      alert("Yay!! ❤️🌸 Your iCal invite was downloaded.");
+    });
+
+    // ---- No button: starts next to Yes, then detaches and flees ----
     let lastMove = 0;
     let dodges = 0;
     let detached = false;
@@ -229,12 +290,10 @@
 
       const r = noBtn.getBoundingClientRect();
 
-      // Keep layout stable
       ph.style.display = 'inline-block';
       ph.style.width  = `${r.width}px`;
       ph.style.height = `${r.height}px`;
 
-      // Move to body and keep same on-screen position
       document.body.appendChild(noBtn);
       noBtn.style.position = 'fixed';
       noBtn.style.left = `${r.left}px`;
@@ -259,7 +318,6 @@
         const y = minY + Math.random() * (maxY - minY);
 
         const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
-
         if(rectsOverlap(candidate, forbidden)) continue;
 
         if(avoidPoint){
@@ -299,7 +357,6 @@
     }, { passive:true });
 
     window.addEventListener('resize', () => {
-      // Reset to initial layout on resize
       if (detached){
         row.appendChild(noBtn);
         noBtn.style.position = 'static';
@@ -311,7 +368,9 @@
       }
     });
 
-    // --- Heart cursor trail ---
+    noBtn.addEventListener('click', () => alert("Nice try 😅"));
+
+    // ---- Heart cursor trail ----
     let lastHeart = 0;
     const HEART_RATE_MS = 14;
 
@@ -339,4 +398,3 @@
   </script>
 </body>
 </html>
-
