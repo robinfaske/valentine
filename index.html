@@ -17,7 +17,7 @@
 
     *{ box-sizing:border-box; }
 
-    /* Custom cursor (needs cursor.png next to index.html; cursor.cur optional) [web:76] */
+    /* Custom cursor (put cursor.png next to index.html; cursor.cur optional) [web:76] */
     html, body{ cursor: url("cursor.cur"), url("cursor.png") 16 16, auto; }
     button, a{ cursor: url("cursor.cur"), url("cursor.png") 16 16, pointer; }
 
@@ -173,6 +173,7 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
+  <!-- Your repo images -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -196,18 +197,20 @@
     const ph     = document.getElementById('no-placeholder');
 
     // ====== Configure invitees here ======
+    // Put real emails here:
     const ORGANIZER = { name: "Your Name", email: "you@example.com" };
     const ATTENDEES = [
       { name: "Her Name", email: "her@example.com" }
-      // Add more: { name: "Friend", email: "friend@example.com" }
     ];
     // ====================================
 
     // ---------- iCal all-day download with attendees ----------
+    const CRLF = "\r\n"; // iCalendar content lines are CRLF-separated. [web:170]
+
     function pad2(n){ return String(n).padStart(2, '0'); }
 
-    // Escape TEXT values (commas/semicolons/newlines) for iCalendar content lines.
-    function escText(s=""){
+    // Escape TEXT values for iCalendar: backslash, comma, semicolon, and encode newlines as \n. [web:160]
+    function escText(s = ""){
       return String(s)
         .replaceAll("\\", "\\\\")
         .replaceAll("\r\n", "\n")
@@ -216,7 +219,7 @@
         .replaceAll(";", "\\;");
     }
 
-    // YYYYMMDD for VALUE=DATE
+    // YYYYMMDD for VALUE=DATE (all-day)
     function toICSDateLocal(d){
       return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
     }
@@ -226,8 +229,8 @@
       return `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}Z`;
     }
 
-    function downloadAllDayICSWithAttendees({ title, description, location, dayLocal, organizer, attendees }){
-      // All-day event: DTSTART/DTEND with VALUE=DATE; DTEND is non-inclusive so use next day. [web:95]
+    function downloadAllDayICSWithAttendees({ title, description, location, dayLocal, organizer, attendees, filename }){
+      // All-day event: DTSTART/DTEND with VALUE=DATE; DTEND is exclusive (use next day). [web:95]
       const start = new Date(dayLocal);
       start.setHours(0,0,0,0);
 
@@ -237,38 +240,42 @@
       const uid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())) + "@valentine";
 
       const organizerLine = organizer?.email
-        ? `ORGANIZER;CN=${escText(organizer.name || organizer.email)}:mailto:${organizer.email}\n`
-        : "";
+        ? `ORGANIZER;CN=${escText(organizer.name || organizer.email)}:mailto:${organizer.email}`
+        : null;
 
       const attendeeLines = (attendees || [])
         .filter(a => a && a.email)
         .map(a =>
           `ATTENDEE;CN=${escText(a.name || a.email)};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${a.email}`
-        )
-        .join("\n");
+        );
 
-      const ics =
-`BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Valentine Page//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${toICSDateTimeUTC(new Date())}
-DTSTART;VALUE=DATE:${toICSDateLocal(start)}
-DTEND;VALUE=DATE:${toICSDateLocal(endExclusive)}
-SUMMARY:${escText(title)}
-DESCRIPTION:${escText(description)}
-LOCATION:${escText(location)}
-${organizerLine}${attendeeLines ? attendeeLines + "\n" : ""}END:VEVENT
-END:VCALENDAR`;
+      const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Valentine Page//EN",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${toICSDateTimeUTC(new Date())}`,
+        `DTSTART;VALUE=DATE:${toICSDateLocal(start)}`,
+        `DTEND;VALUE=DATE:${toICSDateLocal(endExclusive)}`,
+        `SUMMARY:${escText(title)}`,
+        `DESCRIPTION:${escText(description)}`,
+        `LOCATION:${escText(location)}`,
+        ...(organizerLine ? [organizerLine] : []),
+        ...attendeeLines,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ];
+
+      const ics = lines.join(CRLF) + CRLF;
 
       const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
       const url = URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = "valentine-invite.ics";
+      a.download = filename || "valentine-invite.ics";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -277,21 +284,20 @@ END:VCALENDAR`;
     }
 
     yesBtn.addEventListener('click', () => {
-      // Example: all-day for tomorrow (change as you like)
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       downloadAllDayICSWithAttendees({
-        title: "Valentines Date with Babe💘💘💘",
-        description: "You said yes hehehehehe",
+        title: "All-day event",
+        description: "Yay! ❤️ (details inside)",
         location: "TBD",
         dayLocal: tomorrow,
-        organizerEmail: "robin.faske@outlook.de"
-        organizer: "Stinky Babe",
-        attendees: [{ email: "x", name: "Babe" }]
+        organizer: ORGANIZER,
+        attendees: ATTENDEES,
+        filename: "invite.ics"
       });
 
-      alert("Invite downloaded.");
+      alert("Yay! ❤️");
     });
 
     // ---------- No button (detaches + flees) ----------
