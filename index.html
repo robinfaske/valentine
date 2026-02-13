@@ -19,11 +19,8 @@
 
     /*
       Custom cursor:
-      - Use multiple URLs (browser uses the first it can load), then keyword fallback. [web:76]
-      - If your cursor image is too large, browsers may ignore it; 32x32 is a safe target. [web:76]
-      Files expected next to index.html:
-        cursor.cur  (optional but best)
-        cursor.png  (recommended 32x32, transparent)
+      - Put cursor.png next to index.html (ideally ~32x32 transparent).
+      - Optional: also add cursor.cur for best compatibility; we try .cur first. [web:76]
     */
     html, body{
       cursor: url("cursor.cur"), url("cursor.png") 16 16, auto;
@@ -44,7 +41,7 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
     }
 
-    /* Floating background hearts (subtle) */
+    /* Floating background hearts */
     .bg-heart{
       position: fixed;
       inset: 0;
@@ -73,7 +70,7 @@
       100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
     }
 
-    /* Flowers pinned to viewport (your repo images) */
+    /* Flowers pinned to viewport */
     .flower{
       position: fixed;
       pointer-events: none;
@@ -93,7 +90,7 @@
       opacity: .92;
     }
 
-    /* Center card */
+    /* Card */
     .card{
       position: relative;
       z-index: 10;
@@ -133,7 +130,6 @@
       box-shadow: 0 10px 25px rgba(0,0,0,.10);
       transition: transform .08s ease, filter .2s ease, left 140ms ease, top 140ms ease;
       min-width: 120px;
-      /* Do NOT set cursor:pointer here; it's handled above so the custom cursor remains. */
       background: #fff;
       color: #444;
     }
@@ -147,11 +143,11 @@
 
     #no{
       border: 1px solid rgba(0,0,0,.08);
-      position: static; /* starts in-row next to Yes */
+      position: static; /* starts next to Yes */
       z-index: 12;
     }
 
-    /* Placeholder keeps the row centered when No detaches */
+    /* Placeholder keeps row centered when No detaches */
     #no-placeholder{
       display:none;
       width: 120px;
@@ -187,6 +183,7 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
+  <!-- Your repo images -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -209,22 +206,29 @@
     const row    = document.getElementById('buttonRow');
     const ph     = document.getElementById('no-placeholder');
 
-    // ---- iCal (.ics) download on Yes ----
-    // Uses cursor hotspot coords & fallback logic in CSS; the calendar part is just a file download.
-    function toICSDateTimeUTC(d){
-      const pad = (n) => String(n).padStart(2, '0');
-      return (
-        d.getUTCFullYear() +
-        pad(d.getUTCMonth() + 1) +
-        pad(d.getUTCDate()) + 'T' +
-        pad(d.getUTCHours()) +
-        pad(d.getUTCMinutes()) +
-        pad(d.getUTCSeconds()) + 'Z'
-      );
+    // ---------- iCal all-day download ----------
+    function pad2(n){ return String(n).padStart(2, '0'); }
+
+    // YYYYMMDD for VALUE=DATE
+    function toICSDateLocal(d){
+      return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
     }
 
-    function downloadICS({ title, description, location, start, end }){
+    // YYYYMMDDTHHMMSSZ for DTSTAMP (UTC)
+    function toICSDateTimeUTC(d){
+      return `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}Z`;
+    }
+
+    function downloadAllDayICS({ title, description, location, dayLocal }){
+      // All-day is represented as DATE values; DTEND is non-inclusive, so we use next day. [web:95]
+      const start = new Date(dayLocal);
+      start.setHours(0,0,0,0);
+
+      const endExclusive = new Date(start);
+      endExclusive.setDate(start.getDate() + 1);
+
       const uid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())) + "@valentine";
+
       const ics =
 `BEGIN:VCALENDAR
 VERSION:2.0
@@ -233,8 +237,8 @@ CALSCALE:GREGORIAN
 BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${toICSDateTimeUTC(new Date())}
-DTSTART:${toICSDateTimeUTC(start)}
-DTEND:${toICSDateTimeUTC(end)}
+DTSTART;VALUE=DATE:${toICSDateLocal(start)}
+DTEND;VALUE=DATE:${toICSDateLocal(endExclusive)}
 SUMMARY:${title}
 DESCRIPTION:${description}
 LOCATION:${location}
@@ -255,22 +259,21 @@ END:VCALENDAR`;
     }
 
     yesBtn.addEventListener('click', () => {
-      const start = new Date();
-      start.setMinutes(start.getMinutes() + 5); // starts in 5 minutes
-      const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour date
+      // Default: all-day event for tomorrow (change here if you want a specific date)
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      downloadICS({
-        title: "Valentine Date 💘",
+      downloadAllDayICS({
+        title: "Valentine Day 💘",
         description: "You clicked Yes 🙂",
         location: "TBD",
-        start,
-        end
+        dayLocal: tomorrow
       });
 
-      alert("Yay!! ❤️🌸 Your iCal invite was downloaded.");
+      alert("Yay!! ❤️🌸 Your all-day iCal invite was downloaded.");
     });
 
-    // ---- No button: starts next to Yes, then detaches and flees ----
+    // ---------- No button (detaches + flees) ----------
     let lastMove = 0;
     let dodges = 0;
     let detached = false;
@@ -370,7 +373,7 @@ END:VCALENDAR`;
 
     noBtn.addEventListener('click', () => alert("Nice try 😅"));
 
-    // ---- Heart cursor trail ----
+    // ---------- Heart cursor trail ----------
     let lastHeart = 0;
     const HEART_RATE_MS = 14;
 
