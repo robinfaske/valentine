@@ -4,41 +4,44 @@
   <meta charset="UTF-8" />
   <title>Will you be my Valentine?</title>
   <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background: #ffe6ef;
+    body{
+      font-family:sans-serif;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      background:#ffe6ef;
     }
-    h1 {
-      margin-bottom: 40px;
+    h1{ margin-bottom:40px; }
+
+    .buttons{
+      position:relative;
+      width: 320px;          /* give the playground a real size */
+      height: 90px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
     }
-    .buttons {
-      position: relative;
-      width: 300px;
-      height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+
+    button{
+      padding:10px 20px;
+      font-size:18px;
+      cursor:pointer;
     }
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    #no {
-      position: absolute;
+
+    #no{
+      position:absolute;
+      left: 180px;           /* starting position */
+      top: 25px;
+      transition: left 120ms linear, top 120ms linear; /* smooth move */
     }
   </style>
 </head>
 <body>
   <h1>Will you be my Valentine? 💘</h1>
-
-  <div class="buttons">
+  <div class="buttons" id="arena">
     <button id="yes">Yes</button>
     <button id="no">No</button>
   </div>
@@ -46,26 +49,41 @@
   <script>
     const yesBtn = document.getElementById('yes');
     const noBtn  = document.getElementById('no');
+    const arena  = document.getElementById('arena');
 
-    yesBtn.addEventListener('click', () => {
-      alert("Yay! ❤️");
-    });
+    yesBtn.addEventListener('click', () => alert("Yay! ❤️"));
 
     function moveNoButton() {
-      const container = document.querySelector('.buttons');
-      const rect = container.getBoundingClientRect();
+      const arenaRect = arena.getBoundingClientRect();
 
-      const maxX = rect.width - noBtn.offsetWidth;
-      const maxY = rect.height - noBtn.offsetHeight;
+      // Use offset sizes (not transforms) so bounds stay correct.
+      const maxX = arenaRect.width  - noBtn.offsetWidth;
+      const maxY = arenaRect.height - noBtn.offsetHeight;
 
-      const x = Math.random() * maxX - maxX / 2;
-      const y = Math.random() * maxY - maxY / 2;
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
 
-      noBtn.style.transform = `translate(${x}px, ${y}px)`;
+      // Move via left/top (simpler than translate for this case).
+      noBtn.style.left = `${x}px`;
+      noBtn.style.top  = `${y}px`;
     }
 
-    noBtn.addEventListener('mouseenter', moveNoButton);
-    noBtn.addEventListener('focus', moveNoButton);
+    // Only move when the pointer comes near the No button (but not instantly on hover)
+    arena.addEventListener('pointermove', (e) => {
+      const r = noBtn.getBoundingClientRect();
+      const cx = e.clientX;
+      const cy = e.clientY;
+
+      // Distance from pointer to the button's rectangle (0 if inside)
+      const dx = Math.max(r.left - cx, 0, cx - r.right);
+      const dy = Math.max(r.top - cy, 0, cy - r.bottom);
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 25) moveNoButton();   // tweak 25px to taste
+    });
+
+    // Optional: still allow clicking No (do nothing or show message)
+    noBtn.addEventListener('click', () => alert("Aww 😅"));
   </script>
 </body>
 </html>
