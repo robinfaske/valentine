@@ -15,6 +15,7 @@
     }
 
     *{ box-sizing:border-box; }
+
     body{
       margin:0;
       min-height:100vh;
@@ -27,73 +28,7 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
     }
 
-    /* Center card */
-    .card{
-      position:relative;
-      z-index:10;
-      width:min(560px, calc(100vw - 32px));
-      padding:28px 22px;
-      border-radius:22px;
-      background:var(--card);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255, 79, 163, .18);
-      backdrop-filter: blur(6px);
-      text-align:center;
-      margin: 0 auto;
-      top: 50vh;
-      transform: translateY(-55%);
-    }
-
-    h1{
-      margin: 0 0 10px;
-      font-size: clamp(24px, 4vw, 34px);
-      letter-spacing:.2px;
-    }
-
-    p{
-      margin: 0 0 18px;
-      opacity:.75;
-    }
-
-    .buttons{
-      display:flex;
-      justify-content:center;
-      gap:14px;
-      margin-top: 14px;
-    }
-
-    button{
-      border:0;
-      padding: 12px 18px;
-      font-size: 18px;
-      border-radius: 14px;
-      cursor:pointer;
-      box-shadow: 0 10px 25px rgba(0,0,0,.10);
-      transition: transform .08s ease, filter .2s ease;
-    }
-    button:active{ transform: translateY(1px) scale(.99); }
-    button:focus-visible{ outline: 3px solid rgba(255,79,163,.35); outline-offset: 3px; }
-
-    #yes{
-      background: linear-gradient(135deg, #ff3f9a, #ff77c4);
-      color: white;
-      min-width: 120px;
-    }
-
-    /* No button floats freely across the viewport */
-    #no{
-      position: fixed;
-      left: 70vw;
-      top: 62vh;
-      background: white;
-      color: #444;
-      border: 1px solid rgba(0,0,0,.08);
-      min-width: 120px;
-      z-index: 12;
-      transition: left 140ms ease, top 140ms ease;
-    }
-
-    /* Cute “sparkle” hearts in the background */
+    /* Floating background hearts (subtle) */
     .bg-heart{
       position: fixed;
       inset: 0;
@@ -130,6 +65,100 @@
       100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
     }
 
+    /* Flower images pinned to the viewport */
+    .flower{
+      position: fixed;
+      pointer-events: none;
+      z-index: 2;
+      opacity: .98;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.10));
+      height: auto;
+    }
+    .flower.topleft{
+      top: -10px;
+      left: -10px;
+      width: min(260px, 36vw);
+    }
+    .flower.topright{
+      top: -10px;
+      right: -10px;
+      width: min(260px, 36vw);
+    }
+    .flower.bottom{
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(520px, 86vw);
+      z-index: 1; /* behind the card a bit */
+      opacity: .92;
+    }
+
+    /* Center card */
+    .card{
+      position: relative;
+      z-index: 10;
+      width: min(560px, calc(100vw - 32px));
+      padding: 28px 22px;
+      border-radius: 22px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 79, 163, .18);
+      backdrop-filter: blur(6px);
+      text-align: center;
+      margin: 0 auto;
+      top: 50vh;
+      transform: translateY(-55%);
+    }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing: .2px;
+    }
+
+    p{
+      margin: 0 0 18px;
+      opacity: .75;
+    }
+
+    .buttons{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      margin-top: 14px;
+    }
+
+    button{
+      border:0;
+      padding: 12px 18px;
+      font-size: 18px;
+      border-radius: 14px;
+      cursor:pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,.10);
+      transition: transform .08s ease, filter .2s ease;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+    button:focus-visible{ outline: 3px solid rgba(255,79,163,.35); outline-offset: 3px; }
+
+    #yes{
+      background: linear-gradient(135deg, #ff3f9a, #ff77c4);
+      color: #fff;
+      min-width: 120px;
+    }
+
+    /* No button escapes across the viewport */
+    #no{
+      position: fixed;
+      left: 70vw;
+      top: 62vh;
+      background: #fff;
+      color: #444;
+      border: 1px solid rgba(0,0,0,.08);
+      min-width: 120px;
+      z-index: 12;
+      transition: left 140ms ease, top 140ms ease;
+    }
+
     /* Cursor heart trail */
     .heart{
       position: fixed;
@@ -148,36 +177,21 @@
       100% { opacity: 0; transform: translate(-50%, -50%) translateY(-42px) scale(.7) rotate(12deg); }
     }
 
-    /* Corner flower decorations */
-    .corner-flower{
-      position: fixed;
-      width: min(260px, 34vw);
-      height: auto;
-      pointer-events: none;
-      z-index: 2;
-      opacity: .95;
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,.10));
-    }
-    .tl{ left:-10px; top:-10px; }
-    .tr{ right:-10px; top:-10px; transform: scaleX(-1); }
-    .bl{ left:-10px; bottom:-10px; transform: scaleY(-1); }
-    .br{ right:-10px; bottom:-10px; transform: scale(-1, -1); }
-
-    /* Small screen tweaks */
     @media (max-width: 420px){
       #no, #yes{ min-width: 110px; font-size: 17px; }
       .card{ padding: 22px 16px; }
+      .flower.bottom{ width: min(520px, 96vw); }
     }
   </style>
 </head>
+
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
-  <!-- Put your real flower PNGs here (download + rename as shown below) -->
-  <img class="corner-flower tl" src="flower-top-left.png"  alt="" aria-hidden="true">
-  <img class="corner-flower tr" src="flower-top-left.png"  alt="" aria-hidden="true">
-  <img class="corner-flower bl" src="flower-top-left.png"  alt="" aria-hidden="true">
-  <img class="corner-flower br" src="flower-top-left.png"  alt="" aria-hidden="true">
+  <!-- These filenames match what you currently have in the repo -->
+  <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
+  <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
+  <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
 
   <main class="card" id="card">
     <h1>Will you be my Valentine? 💘</h1>
@@ -195,24 +209,17 @@
     const noBtn  = document.getElementById('no');
     const card   = document.getElementById('card');
 
-    // --- cute interactions ---
-    yesBtn.addEventListener('click', () => {
-      alert("Yay!! ❤️🌸");
-    });
+    yesBtn.addEventListener('click', () => alert("Yay!! ❤️🌸"));
+    noBtn.addEventListener('click', () => alert("Nice try 😅"));
 
-    // Optional: if they DO catch No (rare), be playful
-    noBtn.addEventListener('click', () => {
-      alert("Nice try 😅 (Okay okay… you still get flowers.)");
-    });
-
-    // --- No button: chase across the whole screen, but never overlap the card/Yes area ---
+    // --- No button chase logic (avoid overlapping the card) ---
     let lastMove = 0;
     let dodges = 0;
 
-    const FLEE_RADIUS = 130;   // how close the pointer must get before it dodges
-    const COOLDOWN_MS = 120;   // prevents jitter
-    const EDGE_PAD = 12;       // keep inside viewport edges
-    const MAX_TRIES = 40;      // tries to find a valid spot
+    const FLEE_RADIUS = 130;
+    const COOLDOWN_MS = 120;
+    const EDGE_PAD = 12;
+    const MAX_TRIES = 40;
 
     function rectsOverlap(a, b){
       return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
@@ -222,7 +229,6 @@
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // Forbidden zone: the whole card (contains Yes + text)
       const forbidden = card.getBoundingClientRect();
 
       const btnW = noBtn.offsetWidth;
@@ -239,10 +245,8 @@
 
         const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
 
-        // Keep it away from the card
         if(rectsOverlap(candidate, forbidden)) continue;
 
-        // Also keep it away from the pointer a bit (so it doesn't spawn under you)
         if(avoidPoint){
           const cx = x + btnW/2;
           const cy = y + btnH/2;
@@ -255,16 +259,13 @@
         return true;
       }
 
-      // Fallback (if something weird happens)
       noBtn.style.left = `${Math.max(minX, maxX*0.7)}px`;
       noBtn.style.top  = `${Math.max(minY, maxY*0.65)}px`;
       return false;
     }
 
-    // Put "No" somewhere safe at start (so it doesn't cover "Yes")
-    window.addEventListener('load', () => placeNoButtonRandom({x: window.innerWidth/2, y: window.innerHeight/2}));
+    window.addEventListener('load', () => placeNoButtonRandom({x: innerWidth/2, y: innerHeight/2}));
 
-    // Dodge when you get close (chase effect)
     window.addEventListener('pointermove', (e) => {
       const now = performance.now();
       if(now - lastMove < COOLDOWN_MS) return;
@@ -274,7 +275,7 @@
       const cy = r.top  + r.height/2;
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
 
-      // Make it slightly easier to catch after many dodges (optional cute balancing)
+      // Be slightly more catchable after many dodges
       const dynamicRadius = Math.max(70, FLEE_RADIUS - dodges * 6);
 
       if(dist < dynamicRadius){
@@ -282,18 +283,15 @@
         lastMove = now;
         placeNoButtonRandom({x:e.clientX, y:e.clientY});
       }
-    });
+    }, { passive:true });
 
     window.addEventListener('resize', () => {
-      // Keep it inside viewport after resize
-      placeNoButtonRandom({x: window.innerWidth/2, y: window.innerHeight/2});
+      placeNoButtonRandom({x: innerWidth/2, y: innerHeight/2});
     });
 
-    // --- Pink heart cursor trail ---
-    // A common approach is: create small heart elements on mouse/pointer move,
-    // animate them with CSS, then remove them after animation. [web:16]
+    // --- Heart cursor trail ---
     let lastHeart = 0;
-    const HEART_RATE_MS = 14; // lower = more hearts
+    const HEART_RATE_MS = 14;
 
     window.addEventListener('pointermove', (e) => {
       const now = performance.now();
