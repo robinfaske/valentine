@@ -28,7 +28,6 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
     }
 
-    /* Floating background hearts (subtle) */
     .bg-heart{
       position: fixed;
       inset: 0;
@@ -65,7 +64,7 @@
       100%{ transform: translateY(-120vh) rotate(45deg); opacity:.0; }
     }
 
-    /* Flower images pinned to the viewport */
+    /* Flowers pinned to the viewport */
     .flower{
       position: fixed;
       pointer-events: none;
@@ -89,7 +88,7 @@
       left: 50%;
       transform: translateX(-50%);
       width: min(520px, 86vw);
-      z-index: 1; /* behind the card a bit */
+      z-index: 1;
       opacity: .92;
     }
 
@@ -146,7 +145,7 @@
       min-width: 120px;
     }
 
-    /* No button escapes across the viewport */
+    /* No button: fixed and moves around */
     #no{
       position: fixed;
       left: 70vw;
@@ -188,7 +187,7 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
-  <!-- These filenames match what you currently have in the repo -->
+  <!-- Filenames match your repo -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -212,17 +211,49 @@
     yesBtn.addEventListener('click', () => alert("Yay!! ❤️🌸"));
     noBtn.addEventListener('click', () => alert("Nice try 😅"));
 
-    // --- No button chase logic (avoid overlapping the card) ---
+    // --- No button chase logic ---
     let lastMove = 0;
     let dodges = 0;
+    let hasFledOnce = false;
 
-    const FLEE_RADIUS = 130;
+    const FLEE_RADIUS_FIRST = 110; // first approach (when it's next to Yes)
+    const FLEE_RADIUS = 130;       // afterwards
     const COOLDOWN_MS = 120;
     const EDGE_PAD = 12;
     const MAX_TRIES = 40;
 
     function rectsOverlap(a, b){
       return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+    }
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function spawnNoNextToYes(){
+      // Put No right next to Yes (to the right), but still not inside the card text weirdly.
+      const yesRect  = yesBtn.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+
+      const btnW = noBtn.offsetWidth;
+      const btnH = noBtn.offsetHeight;
+
+      const gap = 14; // similar to the .buttons gap
+      let x = yesRect.right + gap;
+      let y = yesRect.top + (yesRect.height - btnH) / 2;
+
+      // Keep it inside the viewport
+      x = clamp(x, EDGE_PAD, window.innerWidth - btnW - EDGE_PAD);
+      y = clamp(y, EDGE_PAD, window.innerHeight - btnH - EDGE_PAD);
+
+      // If that would overlap the card area too awkwardly (rare), place it slightly lower.
+      const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
+      const forbidden = cardRect;
+
+      if (rectsOverlap(candidate, forbidden) && (x > cardRect.left && x < cardRect.right)) {
+        y = clamp(cardRect.bottom + 10, EDGE_PAD, window.innerHeight - btnH - EDGE_PAD);
+      }
+
+      noBtn.style.left = `${x}px`;
+      noBtn.style.top  = `${y}px`;
     }
 
     function placeNoButtonRandom(avoidPoint){
@@ -244,7 +275,6 @@
         const y = minY + Math.random() * (maxY - minY);
 
         const candidate = { left:x, top:y, right:x+btnW, bottom:y+btnH };
-
         if(rectsOverlap(candidate, forbidden)) continue;
 
         if(avoidPoint){
@@ -264,7 +294,11 @@
       return false;
     }
 
-    window.addEventListener('load', () => placeNoButtonRandom({x: innerWidth/2, y: innerHeight/2}));
+    // Initial spawn next to Yes
+    window.addEventListener('load', () => {
+      spawnNoNextToYes();
+      hasFledOnce = false;
+    });
 
     window.addEventListener('pointermove', (e) => {
       const now = performance.now();
@@ -275,18 +309,20 @@
       const cy = r.top  + r.height/2;
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
 
-      // Be slightly more catchable after many dodges
       const dynamicRadius = Math.max(70, FLEE_RADIUS - dodges * 6);
+      const radius = hasFledOnce ? dynamicRadius : FLEE_RADIUS_FIRST;
 
-      if(dist < dynamicRadius){
+      if(dist < radius){
         dodges++;
         lastMove = now;
+        hasFledOnce = true;
         placeNoButtonRandom({x:e.clientX, y:e.clientY});
       }
     }, { passive:true });
 
     window.addEventListener('resize', () => {
-      placeNoButtonRandom({x: innerWidth/2, y: innerHeight/2});
+      spawnNoNextToYes();
+      hasFledOnce = false;
     });
 
     // --- Heart cursor trail ---
