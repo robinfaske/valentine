@@ -17,17 +17,9 @@
 
     *{ box-sizing:border-box; }
 
-    /*
-      Custom cursor:
-      - Put cursor.png next to index.html (ideally ~32x32 transparent).
-      - Optional: also add cursor.cur for best compatibility; we try .cur first. [web:76]
-    */
-    html, body{
-      cursor: url("cursor.cur"), url("cursor.png") 16 16, auto;
-    }
-    button, a{
-      cursor: url("cursor.cur"), url("cursor.png") 16 16, pointer;
-    }
+    /* Custom cursor (needs cursor.png next to index.html; cursor.cur optional) [web:76] */
+    html, body{ cursor: url("cursor.cur"), url("cursor.png") 16 16, auto; }
+    button, a{ cursor: url("cursor.cur"), url("cursor.png") 16 16, pointer; }
 
     body{
       margin:0;
@@ -41,7 +33,6 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
     }
 
-    /* Floating background hearts */
     .bg-heart{
       position: fixed;
       inset: 0;
@@ -63,7 +54,6 @@
     }
     .bg-heart::before{ left: 10%; top: 75%; animation-duration: 8.5s; }
     .bg-heart::after{ left: 82%; top: 80%; animation-duration: 10.5s; background: rgba(255, 134, 198, .20); }
-
     @keyframes floaty{
       0%{ transform: translateY(0) rotate(45deg); opacity:.15; }
       60%{ opacity:.30; }
@@ -154,7 +144,7 @@
       height: 44px;
     }
 
-    /* Cursor heart trail */
+    /* Heart cursor trail */
     .heart{
       position: fixed;
       left: 0;
@@ -183,7 +173,6 @@
 <body>
   <div class="bg-heart" aria-hidden="true"></div>
 
-  <!-- Your repo images -->
   <img class="flower topleft"  src="topleft.png"  alt="" aria-hidden="true">
   <img class="flower topright" src="topright.png" alt="" aria-hidden="true">
   <img class="flower bottom"   src="bottom.png"  alt="" aria-hidden="true">
@@ -206,8 +195,26 @@
     const row    = document.getElementById('buttonRow');
     const ph     = document.getElementById('no-placeholder');
 
-    // ---------- iCal all-day download ----------
+    // ====== Configure invitees here ======
+    const ORGANIZER = { name: "Your Name", email: "you@example.com" };
+    const ATTENDEES = [
+      { name: "Her Name", email: "her@example.com" }
+      // Add more: { name: "Friend", email: "friend@example.com" }
+    ];
+    // ====================================
+
+    // ---------- iCal all-day download with attendees ----------
     function pad2(n){ return String(n).padStart(2, '0'); }
+
+    // Escape TEXT values (commas/semicolons/newlines) for iCalendar content lines.
+    function escText(s=""){
+      return String(s)
+        .replaceAll("\\", "\\\\")
+        .replaceAll("\r\n", "\n")
+        .replaceAll("\n", "\\n")
+        .replaceAll(",", "\\,")
+        .replaceAll(";", "\\;");
+    }
 
     // YYYYMMDD for VALUE=DATE
     function toICSDateLocal(d){
@@ -219,8 +226,8 @@
       return `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}Z`;
     }
 
-    function downloadAllDayICS({ title, description, location, dayLocal }){
-      // All-day is represented as DATE values; DTEND is non-inclusive, so we use next day. [web:95]
+    function downloadAllDayICSWithAttendees({ title, description, location, dayLocal, organizer, attendees }){
+      // All-day event: DTSTART/DTEND with VALUE=DATE; DTEND is non-inclusive so use next day. [web:95]
       const start = new Date(dayLocal);
       start.setHours(0,0,0,0);
 
@@ -228,6 +235,17 @@
       endExclusive.setDate(start.getDate() + 1);
 
       const uid = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())) + "@valentine";
+
+      const organizerLine = organizer?.email
+        ? `ORGANIZER;CN=${escText(organizer.name || organizer.email)}:mailto:${organizer.email}\n`
+        : "";
+
+      const attendeeLines = (attendees || [])
+        .filter(a => a && a.email)
+        .map(a =>
+          `ATTENDEE;CN=${escText(a.name || a.email)};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${a.email}`
+        )
+        .join("\n");
 
       const ics =
 `BEGIN:VCALENDAR
@@ -239,10 +257,10 @@ UID:${uid}
 DTSTAMP:${toICSDateTimeUTC(new Date())}
 DTSTART;VALUE=DATE:${toICSDateLocal(start)}
 DTEND;VALUE=DATE:${toICSDateLocal(endExclusive)}
-SUMMARY:${title}
-DESCRIPTION:${description}
-LOCATION:${location}
-END:VEVENT
+SUMMARY:${escText(title)}
+DESCRIPTION:${escText(description)}
+LOCATION:${escText(location)}
+${organizerLine}${attendeeLines ? attendeeLines + "\n" : ""}END:VEVENT
 END:VCALENDAR`;
 
       const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
@@ -259,18 +277,21 @@ END:VCALENDAR`;
     }
 
     yesBtn.addEventListener('click', () => {
-      // Default: all-day event for tomorrow (change here if you want a specific date)
+      // Example: all-day for tomorrow (change as you like)
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      downloadAllDayICS({
-        title: "Valentine Day with Babe 💘💘💘",
-        description: "You clicked Yes hehehehe🙂",
+      downloadAllDayICSWithAttendees({
+        title: "Valentines Date with Babe💘💘💘",
+        description: "You said yes hehehehehe",
         location: "TBD",
-        dayLocal: tomorrow
+        dayLocal: tomorrow,
+        organizerEmail: "robin.faske@outlook.de"
+        organizer: "Stinky Babe",
+        attendees: [{ email: "x", name: "Babe" }]
       });
 
-      alert("Yay!!!❤️🌸");
+      alert("Invite downloaded.");
     });
 
     // ---------- No button (detaches + flees) ----------
